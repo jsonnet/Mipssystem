@@ -29,11 +29,29 @@ save_v0:	.word 0
 save_a0:	.word 0
 # TODO Zus�tzliche Pl�tze f�r Register die Sie in der Ausnahmebehandlung tempor�r sichern m�chten
 
+#Lukas:
+ENABLE_GLOBAL_INTERRUPT: .word 0x00000001
+
 ###### Bootup Code #################
 
 	.ktext
 # TODO Implementieren Sie den Bootup Code
 # Das finale exception return (eret) soll zum Anfang des User-Programms springen
+
+#LUKAS:
+
+	#Aktiviere Interrupts global
+	mfc0	$t0, $12		#hole Infos aus Statusregister 12
+	lw $t1, ENABLE_GLOBAL_INTERRUPT
+	ori $t0, $t0, $t1		#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
+	mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
+
+	#Den epc auf das Userprogramm setzten, damit eret springt
+	la $t2, task		#Die Adresse von task holen
+	mtc0 $t2, $14		#Die Adresse in epc register 12 schreiben
+
+#END LUKAS
+
 eret
 
 ###### Ausnahmebehandlung ############
@@ -64,6 +82,34 @@ okpc:
 # Exception code
 # TODO Erkennen und implementieren Sie Systemaufrufe hier.
 # Denken Sie daran, dass eine Anpassung des epc erforderlich sein kann.
+
+#Lukas:
+#Prüfe auf syscall
+bne $k0, 0x08, nosyscall
+	#Hier gilt jetzt es ist ein syscall
+	bne $v0, 11, noprintChar
+		#TODO: Hier Code für printChar => das char liegt in $a0
+		#busy Schleife wartet auf Bildschirm bis er ready ist
+		busy:
+			la $t0, 0xffff0008
+			andi $t0, 0x00000001 # 00..01 oder 00...00
+			bne $t0, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+		#Das untere Byte des Datenports mit mit dem Char befüllen
+		#TODO: Mit shiften arbeiten?
+noprintChar:
+	bne $v0, 4, noprintString
+		#TODO: print code für String => $a0 hält string
+		#busy Schleife wartet auf Bildschirm bis er ready ist
+		busy:
+			la $t0, 0xffff0008
+			andi $t0, 0x00000001 # 00..01 oder 00...00
+			bne $t0, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+		#Das untere Byte des Datenports mit mit dem string befüllen
+		#TODO: Mit shiften arbeiten?
+noprintString:
+	#Ab hier einfach urück springen bzw nichts machen
+
+#END LUKAS
 
 	j ret
 
