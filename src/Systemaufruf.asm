@@ -95,7 +95,7 @@ bne $k0, 0x20, nosyscall
 			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
 			bne $t1, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem Char befüllen
-		#TODO: Mit shiften arbeiten?
+		sb $a0, 0xffff000c
 
 		j nosyscall
 noprintChar:
@@ -107,7 +107,7 @@ noprintChar:
 			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
 			bne $t1, 0x00000001, busy2		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem string befüllen
-		#TODO: Mit shiften arbeiten?
+		sb $a0, 0xffff000c
 
 		j nosyscall
 noprintString:
@@ -115,11 +115,12 @@ noprintString:
 
 nosyscall:
 
-#END LUKAS
-
 #TODO: Lade die register wieder:
 
-#TODO: erhöhe epc um 1?
+#TODO: erhöhe epc um 1 oder 4?
+	addiu $14, $14, 1
+
+#END LUKAS
 
 	j ret
 

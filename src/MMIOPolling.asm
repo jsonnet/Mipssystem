@@ -21,7 +21,7 @@ start:
 		bne $t3, 1, busy
 
 	#Das letzte Byte des Bildschirms beschreiben zur Ausgabe
-	lw $t4, 0xffff000c
+	#lw $t4, 0xffff000c
 	sb		$t0, 0xffff000c
 
 b start
