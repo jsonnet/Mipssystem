@@ -1,5 +1,8 @@
+############################
+# DAS PROGRAMM (das lÃ¤uft) #
+############################
+
 	.text
-# User-Programm
 task:
 	la      $a0, msg
 	li	$v0, 4
@@ -14,30 +17,44 @@ loop:	syscall
 	.data
 msg: .asciiz "Hello World!"
 
-# Bootup Code
+
+
+############################
+# KERNEL UND ERRORHANDLING #
+############################
+
+###### Interne Kernel-Daten. #######
+	.kdata
+save_v0:	.word 0
+save_a0:	.word 0
+# TODO Zusï¿½tzliche Plï¿½tze fï¿½r Register die Sie in der Ausnahmebehandlung temporï¿½r sichern mï¿½chten
+
+###### Bootup Code #################
+
 	.ktext
 # TODO Implementieren Sie den Bootup Code
 # Das finale exception return (eret) soll zum Anfang des User-Programms springen
 eret
 
-# Ausnahmebehandlung
-# Hier dürfen Sie $k0 und $k1 verwenden
-# Andere Register müssen zunächst gesichert werden
+###### Ausnahmebehandlung ############
+
+# Hier dï¿½rfen Sie $k0 und $k1 verwenden
+# Andere Register mï¿½ssen zunï¿½chst gesichert werden
 .ktext 0x80000180
-	# Sichere alle Register, die wir in der Ausnahmebehandlöung verwenden werden
+	# Sichere alle Register, die wir in der Ausnahmebehandlï¿½ung verwenden werden
 	move $k1, $at
-	sw $v0 exc_v0
-	sw $a0 exc_a0
+	sw $v0 save_v0
+	sw $a0 save_a0
 
 	mfc0 $k0 $13		# Cause register
 
 # Der folgende Fall kann Ihnen als !Beispiel! zur Erkennung einer bestimmten Ausnahme dienen:
-# Teste ob unser PC miss-aligned ist, in diesem Fall hängt die Maschine
+# Teste ob unser PC miss-aligned ist, in diesem Fall hï¿½ngt die Maschine
 	bne $k0 0x18 okpc	# Bad PC Exception
 	mfc0 $a0 $14		# EPC
 	andi $a0 $a0 0x3	# Ist EPC Wort-aligned?
 	beq $a0 0 okpc
-fail:	j fail			# PC ist nicht aligned -> Prozessor hängt
+fail:	j fail			# PC ist nicht aligned -> Prozessor hï¿½ngt
 
 # Der PC ist in Ordnung, teste auf weitere Exceptions/Interrupts
 okpc:
@@ -50,19 +67,13 @@ okpc:
 
 	j ret
 
-# Interrupt-spezifischer code (Für diese Aufgabe ist hier nichts zu erledigen)
+# Interrupt-spezifischer code (Fï¿½r diese Aufgabe ist hier nichts zu erledigen)
 interrupt:
 	j ret
 ret:
 # Stelle verwendete Register wieder her
-	lw $v0 exc_v0
-	lw $a0 exc_a0
+	lw $v0 save_v0
+	lw $a0 save_a0
 	move $at, $k1
-# Kehre zum EPC zurück
+# Kehre zum EPC zurï¿½ck
 	eret
-
-# Interne Kernel-Daten.
-	.kdata
-exc_v0:	.word 0
-exc_a0:	.word 0
-# TODO Zusätzliche Plätze für Register die Sie in der Ausnahmebehandlung temporär sichern möchten

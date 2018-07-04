@@ -1,8 +1,12 @@
+###################
+# USER PROGRAMME	#
+###################
+
 	.text
 # User Programm 1: Gib Zahlen aus
 task1:	li	$a0, '0'
 	li 	$v0, 11
-	li 	$t0, 10	
+	li 	$t0, 10
 loop1:	syscall
 	addiu   $a0, $a0, 1
 	divu    $t1, $a0, ':'
@@ -17,18 +21,22 @@ task2:	li	$a0, 'B'
 loop2:  syscall
 	b	loop2
 
-# Bootup Code
+############################
+# KERNEL UND ERRORHANDLING #
+############################
+
+########## Bootup Code ############
 	.ktext
 # TODO Implementieren Sie den Bootup Code
-# Initialisieren Sie hierfür alle benötigten Datenstrukturen
+# Initialisieren Sie hierfï¿½r alle benï¿½tigten Datenstrukturen
 # Das finale exception return (eret) soll zum Anfang von Programm 1 springen
 eret
 
-# Ausnahmebehandlung
-# Hier dürfen Sie $k0 und $k1 verwenden
-# Andere Register müssen zunächst gesichert werden
+########## Ausnahmebehandlung ###########
+# Hier dï¿½rfen Sie $k0 und $k1 verwenden
+# Andere Register mï¿½ssen zunï¿½chst gesichert werden
 .ktext 0x80000180
-	# Sichere alle Register, die wir in der Ausnahmebehandlöung verwenden werden
+	# Sichere alle Register, die wir in der Ausnahmebehandlï¿½ung verwenden werden
 	move $k1, $at
 	sw $v0 exc_v0
 	sw $a0 exc_a0
@@ -36,12 +44,12 @@ eret
 	mfc0 $k0 $13		# Cause register
 
 # Der folgende Fall kann Ihnen als !Beispiel! zur Erkennung einer bestimmten Ausnahme dienen:
-# Teste ob unser PC miss-aligned ist, in diesem Fall hängt die Maschine
+# Teste ob unser PC miss-aligned ist, in diesem Fall hï¿½ngt die Maschine
 	bne $k0 0x18 okpc	# Bad PC Exception
 	mfc0 $a0 $14		# EPC
 	andi $a0 $a0 0x3	# Ist EPC Wort-aligned?
 	beq $a0 0 okpc
-fail:	j fail			# PC ist nicht aligned -> Prozessor hängt
+fail:	j fail			# PC ist nicht aligned -> Prozessor hï¿½ngt
 
 # Der PC ist in Ordnung, teste auf weitere Exceptions/Interrupts
 okpc:
@@ -49,7 +57,7 @@ okpc:
 	beq $a0 0 interrupt	# 0 bedeutet Interrupt
 
 # Exception code
-# TODO Erkennen und Implementieren Sie Systemaufrufe hier. Hier können Sie Teile aus Aufgabe 2.1 wiederverwenden
+# TODO Erkennen und Implementieren Sie Systemaufrufe hier. Hier kï¿½nnen Sie Teile aus Aufgabe 2.1 wiederverwenden
 # Denken Sie daran, dass eine Anpassung des epc erforderlich sein kann.
 
 	j ret
@@ -57,7 +65,7 @@ okpc:
 # Interrupt-spezifischer code
 
 interrupt:
-# TODO Für Timer-Interrupt, rufen Sie timint auf
+# TODO Fï¿½r Timer-Interrupt, rufen Sie timint auf
 
 	j ret
 ret:
@@ -65,14 +73,14 @@ ret:
 	lw $v0 exc_v0
 	lw $a0 exc_a0
 	move $at, $k1
-# Kehre zum EPC zurück
+# Kehre zum EPC zurï¿½ck
 	eret
 
-# Interne Kernel-Daten.
+############ Interne Kernel-Daten. ###########
 	.kdata
 exc_v0:	.word 0
 exc_a0:	.word 0
-# TODO Zusätzliche Plätze für Register die Sie in der Ausnahmebehandlung temporär sichern möchten
+# TODO Zusï¿½tzliche Plï¿½tze fï¿½r Register die Sie in der Ausnahmebehandlung temporï¿½r sichern mï¿½chten
 
 	.ktext
 # Hilfsfunktionen
@@ -80,16 +88,16 @@ timint:
 # TODO Bearbeiten Sie den Timer-Interrupt hier und rufen Sie diese Funktion aus der Ausnahmebehandlung auf
 	j	ret
 
-# Prozesskontrollblöcke
-# An Platz 0: Der Programmzähler
+# Prozesskontrollblï¿½cke
+# An Platz 0: Der Programmzï¿½hler
 # An Platz 1: Zustand des Prozesses. Hierbei bedeutet 0 -> idle, 1 -> running.
 # An Platz 2-..: Zustand der Register
 	.kdata
 pcb_task1:
 .word task1
 .word 0
-# TODO Allozieren Sie Platz für den Zustand aller Register hier
+# TODO Allozieren Sie Platz fï¿½r den Zustand aller Register hier
 pcb_task2:
 .word task2
 .word 0
-# TODO Allozieren Sie Platz für den Zustand aller Register hier
+# TODO Allozieren Sie Platz fï¿½r den Zustand aller Register hier
