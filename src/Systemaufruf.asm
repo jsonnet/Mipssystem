@@ -42,8 +42,8 @@ ENABLE_GLOBAL_INTERRUPT: .word 0x00000001
 
 	#Aktiviere Interrupts global
 	mfc0	$t0, $12		#hole Infos aus Statusregister 12
-	lw $t1, ENABLE_GLOBAL_INTERRUPT
-	ori $t0, $t0, $t1		#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
+	#lw $t1, ENABLE_GLOBAL_INTERRUPT
+	ori $t0, $t0, 0x00000001	#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
 	mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
 
 	#Den epc auf das Userprogramm setzten, damit eret springt
@@ -85,31 +85,41 @@ okpc:
 
 #Lukas:
 #Prüfe auf syscall
-bne $k0, 0x08, nosyscall
+bne $k0, 0x20, nosyscall
 	#Hier gilt jetzt es ist ein syscall
 	bne $v0, 11, noprintChar
 		#TODO: Hier Code für printChar => das char liegt in $a0
 		#busy Schleife wartet auf Bildschirm bis er ready ist
 		busy:
-			la $t0, 0xffff0008
-			andi $t0, 0x00000001 # 00..01 oder 00...00
-			bne $t0, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+			lw $t0, 0xffff0008
+			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
+			bne $t1, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem Char befüllen
 		#TODO: Mit shiften arbeiten?
+
+		j nosyscall
 noprintChar:
 	bne $v0, 4, noprintString
 		#TODO: print code für String => $a0 hält string
 		#busy Schleife wartet auf Bildschirm bis er ready ist
-		busy:
-			la $t0, 0xffff0008
-			andi $t0, 0x00000001 # 00..01 oder 00...00
-			bne $t0, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+		busy2:
+			lw $t0, 0xffff0008
+			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
+			bne $t1, 0x00000001, busy2		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem string befüllen
 		#TODO: Mit shiften arbeiten?
+
+		j nosyscall
 noprintString:
 	#Ab hier einfach urück springen bzw nichts machen
 
+nosyscall:
+
 #END LUKAS
+
+#TODO: Lade die register wieder:
+
+#TODO: erhöhe epc um 1?
 
 	j ret
 
