@@ -136,8 +136,108 @@ currentProgram: .byte 0			#Gibt das aktuell bearbeitete Programm wieder (0 = tas
 timint:
 # TODO Bearbeiten Sie den Timer-Interrupt hier und rufen Sie diese Funktion aus der Ausnahmebehandlung auf
 
+#Den aktuellen Prozess anhand des Idlebits im pcb herausfinden
+la $t1, pcb_task1
+lw $t0, 1($t1)
+bne $t0, 0, programm2
+	#Aktuell in task1 => soll zu task2 wechseln
 
+	#Programmzähler im pcb überschreiben
+	mfc0 $t0, $14		#epc in t0 laden
+	sw $t0, 0($t1)
 
+	#Aktuelle Register des Programms in pcb abspeichern
+	lw $t0, exc_a0
+	sw $t0, 2($t1)
+
+	lw $t0, exc_v0
+	sw $t0, 3($t1)
+
+	lw $t0, exc_t0
+	sw $t0, 4($t1)
+
+	lw $t0, exc_t1
+	sw $t0, 5($t1)
+
+	#Register auf die Register in pcb_task2 wechseln
+	la $t1, pcb_task2
+
+	lw $t0, 2($t1)
+	sw $t0, exc_a0
+
+	lw $t0, 3($t1)
+	sw $t0, exc_v0
+
+	lw $t0, 4($t1)
+	sw $t0, exc_t0
+
+	lw $t0, 5($t1)
+	sw $t0, exc_t1
+
+	#eret auf Programmzähler des pcb setzen
+	lw $t0, 0($t1)
+	mtc0 $t0, $14
+
+	#Prozesszustände ändern
+	li $t0, 1
+	sw $t0, 1($t1)	#task2 auf 1
+
+	la $t1, pcb_task1
+	li $t0, 0
+	sw $t0, 1($t1)	#task1 auf 0 (idle)
+
+	j endtimint
+
+programm2:
+	#Aktuell in task2 => soll zu task1 wechseln
+	la $t1, pcb_task2
+
+	#Programmzähler im pcb überschreiben
+	mfc0 $t0, $14		#epc in t0 laden
+	sw $t0, 0($t1)
+
+	#Aktuelle Register des Programms in pcb abspeichern
+	lw $t0, exc_a0
+	sw $t0, 2($t1)
+
+	lw $t0, exc_v0
+	sw $t0, 3($t1)
+
+	lw $t0, exc_t0
+	sw $t0, 4($t1)
+
+	lw $t0, exc_t1
+	sw $t0, 5($t1)
+
+	#Register auf die Register in pcb_task1 wechseln
+	la $t1, pcb_task1
+
+	lw $t0, 2($t1)
+	sw $t0, exc_a0
+
+	lw $t0, 3($t1)
+	sw $t0, exc_v0
+
+	lw $t0, 4($t1)
+	sw $t0, exc_t0
+
+	lw $t0, 5($t1)
+	sw $t0, exc_t1
+
+	#eret auf Programmzähler des pcb setzen
+	lw $t0, 0($t1)
+	mtc0 $t0, $14
+
+	#Prozesszustände ändern
+	li $t0, 1
+	sw $t0, 1($t1)	#task1 auf 1
+
+	la $t1, pcb_task2
+	li $t0, 0
+	sw $t0, 1($t1)	#task2 auf 0 (idle)
+
+	j endtimint
+endtimint:
 	#Für ungefähr 100 Zyklen hier unten lassen
 	#Setze Count-Register wieder zurück
 	mtc0 $zero, $9
