@@ -27,9 +27,18 @@ loop2:  syscall
 
 ########## Bootup Code ############
 	.ktext
-# TODO Implementieren Sie den Bootup Code
 # Initialisieren Sie hierf�r alle ben�tigten Datenstrukturen
 # Das finale exception return (eret) soll zum Anfang von Programm 1 springen
+
+#Aktiviere Interrupts global
+mfc0	$t0, $12		#hole Infos aus Statusregister 12
+ori $t0, $t0, 0x00000001	#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
+mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
+
+#Den epc auf das Userprogramm setzten, damit eret springt
+la $t1, task1		#Die Adresse von task holen
+mtc0 $t1, $14		#Die Adresse in epc register 12 schreiben
+
 eret
 
 ########## Ausnahmebehandlung ###########
@@ -59,6 +68,20 @@ okpc:
 # Exception code
 # TODO Erkennen und Implementieren Sie Systemaufrufe hier. Hier k�nnen Sie Teile aus Aufgabe 2.1 wiederverwenden
 # Denken Sie daran, dass eine Anpassung des epc erforderlich sein kann.
+
+bne $k0, 0x20, nosyscall
+	bne $v0, 11, noprintChar
+		#TODO: Hier Code für printChar => das char liegt in $a0
+		#busy Schleife wartet auf Bildschirm bis er ready ist
+		busy:
+			lw $t0, 0xffff0008
+			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
+			bne $t1, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+		#Das untere Byte des Datenports mit mit dem Char befüllen
+		sb $a0, 0xffff000c
+
+	noprintChar:
+nosyscall:
 
 	j ret
 

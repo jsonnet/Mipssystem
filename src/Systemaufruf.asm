@@ -95,6 +95,7 @@ bne $k0, 0x20, nosyscall
 			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
 			bne $t1, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem Char befüllen
+		lb $a0, save_a0
 		sb $a0, 0xffff000c
 
 		j nosyscall
@@ -102,13 +103,22 @@ noprintChar:
 	bne $v0, 4, noprintString
 		#TODO: print code für String => $a0 hält string
 		#busy Schleife wartet auf Bildschirm bis er ready ist
-		busy2:
-			lw $t0, 0xffff0008
-			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
-			bne $t1, 0x00000001, busy2		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
-		#Das untere Byte des Datenports mit mit dem string befüllen
-		sb $a0, 0xffff000c
-
+		li $t2, 0
+		lw $a0, save_a0				#lädt Adresse des Strings
+		print:
+			add $t4, $a0, $t2			#Adresse mit aktuellem Counteroffset erhöht
+			lb $t3, 0($t4)						#Inhalt an dieser Adresse laden
+			beq $t3, 0x00, endprint					#Auf Nullbyte prüfen und falls nötig aus print-Schleife springen
+				#Busy wait auf Bildschirm
+				busy2:
+					lw $t0, 0xffff0008
+					andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
+					bne $t1, 0x00000001, busy2		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
+				#Das untere Byte des Datenports mit mit dem string befüllen
+				sb $t3, 0xffff000c
+				addiu $t2, $t2, 1
+			j print
+		endprint:
 		j nosyscall
 noprintString:
 	#Ab hier einfach urück springen bzw nichts machen
@@ -118,7 +128,9 @@ nosyscall:
 #TODO: Lade die register wieder:
 
 #TODO: erhöhe epc um 1 oder 4?
-	addiu $14, $14, 1
+	mfc0 $t0, $14
+	addiu $t0, $t0, 4
+	mtc0 $t0, $14
 
 #END LUKAS
 
