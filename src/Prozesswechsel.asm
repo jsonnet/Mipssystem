@@ -35,9 +35,6 @@ mfc0	$t0, $12		#hole Infos aus Statusregister 12
 ori $t0, $t0, 0x00000001	#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
 mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
 
-#Count-Register auf 0 setzten ($9 = count)
-mtc0 $zero, $9
-
 #Compar-Register auf 100 setzten ($11 = compare) => Timerinterrupt aktiviert wenn gesetzt?
 li $t0, 100
 mtc0 $t0, $11
@@ -46,18 +43,25 @@ mtc0 $t0, $11
 la $t1, task1		#Die Adresse von task holen
 mtc0 $t1, $14		#Die Adresse in epc register 12 schreiben
 
+#Count-Register auf 0 setzten ($9 = count)
+mtc0 $zero, $9
+
 eret
 
 ########## Ausnahmebehandlung ###########
 # Hier d�rfen Sie $k0 und $k1 verwenden
 # Andere Register m�ssen zun�chst gesichert werden
 .ktext 0x80000180
+	#Den aktuellen Counter speicher (als erstes)
+	mfc0 $s1, $9
+
 	# Sichere alle Register, die wir in der Ausnahmebehandl�ung verwenden werden
 	move $k1, $at
 	sw $v0 exc_v0
 	sw $a0 exc_a0
 
-
+	sw $t0, exc_t0
+	sw $t1, exc_t1
 
 	mfc0 $k0 $13		# Cause register
 
@@ -98,6 +102,9 @@ nosyscall:
 	addiu $t0, $t0, 4
 	mtc0 $t0, $14
 
+	#Count auf Zustand vor dem Exception-Handling-Code setzten
+	mtc0 $s1, $9
+
 	j ret
 
 # Interrupt-spezifischer code
@@ -108,6 +115,10 @@ interrupt:
 	bne $t0, 0x8000, notimerinterrupt		#Flag nicht 1? Kein Timerinterrupt also überspringe die Verzweigung
 		j timint
 notimerinterrupt:
+	#epc anpassen!
+	mfc0 $t0, $14
+	addiu $t0, $t0, 4
+	mtc0 $t0, $14
 	j ret
 ret:
 # Stelle verwendete Register wieder her
@@ -117,6 +128,7 @@ ret:
 
 	lw $t0, exc_t0
 	lw $t1, exc_t1
+
 # Kehre zum EPC zur�ck
 	eret
 
