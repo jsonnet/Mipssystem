@@ -35,6 +35,13 @@ mfc0	$t0, $12		#hole Infos aus Statusregister 12
 ori $t0, $t0, 0x00000001	#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
 mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
 
+#Count-Register auf 0 setzten ($9 = count)
+mtc0 $zero, $9
+
+#Compar-Register auf 100 setzten ($11 = compare) => Timerinterrupt aktiviert wenn gesetzt?
+li $t0, 100
+mtc0 $t0, $11
+
 #Den epc auf das Userprogramm setzten, damit eret springt
 la $t1, task1		#Die Adresse von task holen
 mtc0 $t1, $14		#Die Adresse in epc register 12 schreiben
@@ -49,6 +56,8 @@ eret
 	move $k1, $at
 	sw $v0 exc_v0
 	sw $a0 exc_a0
+
+
 
 	mfc0 $k0 $13		# Cause register
 
@@ -65,11 +74,11 @@ okpc:
 	andi $a0 $k0 0x7c
 	beq $a0 0 interrupt	# 0 bedeutet Interrupt
 
-# Exception code
-# TODO Erkennen und Implementieren Sie Systemaufrufe hier. Hier k�nnen Sie Teile aus Aufgabe 2.1 wiederverwenden
-# Denken Sie daran, dass eine Anpassung des epc erforderlich sein kann.
+########## Exception code von uns ############
 
+#syscalls abfangen (nur syscall 11 für dieses Projekt)
 bne $k0, 0x20, nosyscall
+	lw $v0, exc_v0
 	bne $v0, 11, noprintChar
 		#TODO: Hier Code für printChar => das char liegt in $a0
 		#busy Schleife wartet auf Bildschirm bis er ready ist
@@ -78,10 +87,16 @@ bne $k0, 0x20, nosyscall
 			andi $t1, $t0, 0x00000001 # 00..01 oder 00...00
 			bne $t1, 0x00000001, busy		#Ready-Bit von Bildschirm nicht aktiv? dann jump busy
 		#Das untere Byte des Datenports mit mit dem Char befüllen
+		lw $a0, exc_a0
 		sb $a0, 0xffff000c
 
 	noprintChar:
 nosyscall:
+
+	#epc anpassen!
+	mfc0 $t0, $14
+	addiu $t0, $t0, 4
+	mtc0 $t0, $14
 
 	j ret
 
@@ -89,13 +104,19 @@ nosyscall:
 
 interrupt:
 # TODO F�r Timer-Interrupt, rufen Sie timint auf
-
+	andi $t0, $k0, 0x8000		#Verunden des Causregisters um das 15. Bit zu bekommen
+	bne $t0, 0x8000, notimerinterrupt		#Flag nicht 1? Kein Timerinterrupt also überspringe die Verzweigung
+		j timint
+notimerinterrupt:
 	j ret
 ret:
 # Stelle verwendete Register wieder her
 	lw $v0 exc_v0
 	lw $a0 exc_a0
 	move $at, $k1
+
+	lw $t0, exc_t0
+	lw $t1, exc_t1
 # Kehre zum EPC zur�ck
 	eret
 
@@ -103,12 +124,23 @@ ret:
 	.kdata
 exc_v0:	.word 0
 exc_a0:	.word 0
+
 # TODO Zus�tzliche Pl�tze f�r Register die Sie in der Ausnahmebehandlung tempor�r sichern m�chten
+exc_t0: .word 0
+exc_t1: .word 0
+
+currentProgram: .byte 0			#Gibt das aktuell bearbeitete Programm wieder (0 = task1, 1 = task2)
 
 	.ktext
 # Hilfsfunktionen
 timint:
 # TODO Bearbeiten Sie den Timer-Interrupt hier und rufen Sie diese Funktion aus der Ausnahmebehandlung auf
+
+
+
+	#Für ungefähr 100 Zyklen hier unten lassen
+	#Setze Count-Register wieder zurück
+	mtc0 $zero, $9
 	j	ret
 
 # Prozesskontrollbl�cke
@@ -120,7 +152,16 @@ pcb_task1:
 .word task1
 .word 0
 # TODO Allozieren Sie Platz f�r den Zustand aller Register hier
+.word 0		#2: a0
+.word 0		#3: v0
+.word 0		#4: t0
+.word 0		#5: t1
+
 pcb_task2:
 .word task2
 .word 0
 # TODO Allozieren Sie Platz f�r den Zustand aller Register hier
+.word 0		#2: a0
+.word 0		#3: v0
+.word 0		#4: t0
+.word 0		#5: t1
