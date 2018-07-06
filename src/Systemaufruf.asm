@@ -48,7 +48,7 @@ ENABLE_GLOBAL_INTERRUPT: .word 0x00000001
 
 	#Den epc auf das Userprogramm setzten, damit eret springt
 	la $t2, task		#Die Adresse von task holen
-	mtc0 $t2, $14		#Die Adresse in epc register 12 schreiben
+	mtc0 $t2, $14		#Die Adresse in epc register 14 schreiben
 
 #END LUKAS
 

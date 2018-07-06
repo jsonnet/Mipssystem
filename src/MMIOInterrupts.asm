@@ -18,15 +18,33 @@ exc_v0:	.word 0
 exc_a0:	.word 0
 # TODO Zus�tzliche Pl�tze f�r Register die Sie in der Ausnahmebehandlung tempor�r sichern m�chten
 
-# TODO Allozieren Sie hier Ihren 16-Byte gro�en Puffer
-
+#16-Byte gro�en Puffer
+puff: .space 16
 
 ######## Bootup-Code ##########
 
 .ktext
-# TODO Implementieren Sie die Systeminitialisierung hier. Was m�ssen Sie hierf�r tun?
+#Systeminitialisierung
 
-# TODO Springe zu unserem n�tzlichen Programm
+#Aktiviere Interrupts global
+mfc0	$t0, $12		#hole Infos aus Statusregister 12
+ori $t0, $t0, 0x00000001	#So verodern, dass alle vorderen Bits gleich bleiben aber das letzte auf jeden Fall 1 ist
+mtc0	$t0, $12		#Schreibe den neuen Wert zurück ins Statusregister
+
+#Aktiviere Keyboard-Interrupts
+la $t0, 0xffff0000		#Tastatur Kontrollport laden
+ori $t0, 0x00000002		#So verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
+sw $t0, 0xffff0000		#Veränderten Wert zurück schreiben
+
+#Aktiviere Bildschirm-Interrupts
+la $t0, 0xffff0008		#Bildschirm Kontrollport laden
+ori $t0, 0x00000002		#Verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
+sw $t0, 0xffff0008		#Veränderten Wert zurück schreiben
+
+#Setze epc auf usefultask
+la $t0, usefultask
+mtc0 $t0, $14
+
 eret
 
 
@@ -63,6 +81,15 @@ okpc:
 # TODO Implementieren Sie hier Handler f�r Tastatur- und Display-Interrupts
 # Sie k�nnen die eigentliche Funktionalit�t in Funktionen auslagern. (�hnlich zu Aufgabe 2.2)
 interrupt:
+	#Auf Tastatur-Interrupt prüfen:
+	mfc0 $k0, $13						#Cause Register auslesen
+	andi $k0, 0x00000200		#so verunden, dass man das 10. Bit checken kann
+	beq $k0, 0x00000200, keyboardint
+
+	mfc0 $k0, $13						#Cause Register auslesen
+	andi $k0, 0x00000400		#so verunden, dass man das 11. Bit checken kann
+	beq $k0, 0x00000400, displayint
+
 	j ret
 ret:
 # Stelle verwendete Register wieder her
@@ -71,3 +98,10 @@ ret:
 	move $at, $k1
 # Kehre zum EPC zur�ck
 	eret
+
+#TODO: Interrupts implementieren
+keyboardint:
+	j ret		#Keyboard return
+
+displayint:
+	j ret		#Display return
