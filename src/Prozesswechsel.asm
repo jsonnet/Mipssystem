@@ -116,10 +116,10 @@ interrupt:
 		j timint
 notimerinterrupt:
 	#epc anpassen!
-	mfc0 $t0, $14
-	addiu $t0, $t0, 4
-	mtc0 $t0, $14
-	j ret
+#	mfc0 $t0, $14
+#	addiu $t0, $t0, 4
+#	mtc0 $t0, $14
+#	j ret
 ret:
 # Stelle verwendete Register wieder her
 	lw $v0 exc_v0
@@ -150,53 +150,66 @@ timint:
 
 #Den aktuellen Prozess anhand des Idlebits im pcb herausfinden
 la $t1, pcb_task1
-lw $t0, 1($t1)
+addiu $t1, $t1, 4
+lw $t0, 0($t1)					#hier wird der epc komischerweise gesetzt und zu Zeile 56 gesprungen => Zeile löst selber ein Interrupt auf?
 bne $t0, 0, programm2
 	#Aktuell in task1 => soll zu task2 wechseln
 
 	#Programmzähler im pcb überschreiben
 	mfc0 $t0, $14		#epc in t0 laden
+	la $t1, pcb_task1
 	sw $t0, 0($t1)
 
 	#Aktuelle Register des Programms in pcb abspeichern
 	lw $t0, exc_a0
-	sw $t0, 2($t1)
+	addiu $t1, $t1, 8
+	sw $t0, 0($t1)
 
 	lw $t0, exc_v0
-	sw $t0, 3($t1)
+	addiu $t1, $t1, 4
+	sw $t0, 0($t1)
 
 	lw $t0, exc_t0
-	sw $t0, 4($t1)
+	addiu $t1, $t1, 4
+	sw $t0, 0($t1)
 
 	lw $t0, exc_t1
-	sw $t0, 5($t1)
+	addiu $t1, $t1, 4
+	sw $t0, 0($t1)
 
 	#Register auf die Register in pcb_task2 wechseln
 	la $t1, pcb_task2
 
-	lw $t0, 2($t1)
+	addiu $t1, $t1, 8
+	lw $t0, 0($t1)
 	sw $t0, exc_a0
 
-	lw $t0, 3($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_v0
 
-	lw $t0, 4($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_t0
 
-	lw $t0, 5($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_t1
 
 	#eret auf Programmzähler des pcb setzen
+	la $t1, pcb_task2
 	lw $t0, 0($t1)
 	mtc0 $t0, $14
 
 	#Prozesszustände ändern
+	addiu $t1, $t1, 4
 	li $t0, 1
-	sw $t0, 1($t1)	#task2 auf 1
+	sw $t0, 0($t1)	#task2 auf 1
 
 	la $t1, pcb_task1
+	addiu $t1, $t1, 4
 	li $t0, 0
-	sw $t0, 1($t1)	#task1 auf 0 (idle)
+	sw $t0, 0($t1)	#task1 auf 0 (idle)
 
 	j endtimint
 
@@ -209,44 +222,55 @@ programm2:
 	sw $t0, 0($t1)
 
 	#Aktuelle Register des Programms in pcb abspeichern
+	addiu $t1, $t1, 8
 	lw $t0, exc_a0
-	sw $t0, 2($t1)
+	sw $t0, 0($t1)
 
+	addiu $t1, $t1, 4
 	lw $t0, exc_v0
-	sw $t0, 3($t1)
+	sw $t0, 0($t1)
 
+	addiu $t1, $t1, 4
 	lw $t0, exc_t0
-	sw $t0, 4($t1)
+	sw $t0, 0($t1)
 
+	addiu $t1, $t1, 4
 	lw $t0, exc_t1
-	sw $t0, 5($t1)
+	sw $t0, 0($t1)
 
 	#Register auf die Register in pcb_task1 wechseln
 	la $t1, pcb_task1
 
-	lw $t0, 2($t1)
+	addiu $t1, $t1, 8
+	lw $t0, 0($t1)
 	sw $t0, exc_a0
 
-	lw $t0, 3($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_v0
 
-	lw $t0, 4($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_t0
 
-	lw $t0, 5($t1)
+	addiu $t1, $t1, 4
+	lw $t0, 0($t1)
 	sw $t0, exc_t1
 
 	#eret auf Programmzähler des pcb setzen
+	la $t1, pcb_task1
 	lw $t0, 0($t1)
 	mtc0 $t0, $14
 
 	#Prozesszustände ändern
+	addiu $t1, $t1, 4
 	li $t0, 1
-	sw $t0, 1($t1)	#task1 auf 1
+	sw $t0, 0($t1)	#task1 auf 1
 
 	la $t1, pcb_task2
+	addiu $t1, $t1, 4
 	li $t0, 0
-	sw $t0, 1($t1)	#task2 auf 0 (idle)
+	sw $t0, 0($t1)	#task2 auf 0 (idle)
 
 	j endtimint
 endtimint:
