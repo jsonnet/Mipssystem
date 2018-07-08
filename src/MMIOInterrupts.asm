@@ -98,10 +98,22 @@ ret:
 #TODO: Interrupts implementieren
 keyboardint:
 
-	lb $t0, 0xffff0004		#Eingabe abspeichern
+	#Die richtige Stelle im Puffer zum Speichern finden
 	la $t1, puff
-	sb $t0, 0($t1)
+	lw $t0, 0($t1)			#t0 enthält den Offset im Puffer
+	beq $t0, 64, skip		#Ist der Offset das Ende des Puffers wird NICHT geschrieben
 
+	add $t1, $t1, $t0		#Offset auf Adresse Anwenden
+	lb $t0, 0xffff0004		#Eingabe anfordern
+	sb $t0, 0($t1)			#Eingabe in den Puffer Speichern
+
+	#Offsetvariable im Puffer um 4 erhöhen
+	la $t1, puff
+	lw $t0, 0($t1)
+	addiu $t0, $t0, 4
+	sw $t0, 0($t1)
+
+skip:
 	#Aktiviere Bildschirm-Interrupts
 	la $t0, 0xffff0008		#Bildschirm Kontrollport laden
 	ori $t0, 0x00000002		#Verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
@@ -111,11 +123,31 @@ keyboardint:
 
 displayint:
 
+	la $t0, puff
+	lw $k1, 0($t0)
+	li $k0, 4
+
+printloop:
+	beq $k0, $k1, endloop
+
+	#Lädt den Char aus dem Puffer und gibt es dem Bildschirm
 	la $t1, puff
+	add $t1, $t1, $k0
 	lw $t0, 0($t1)
 	sb $t0, 0xffff000c
 
-	#TODO: Deaktiviere Bildschirm-Interrupts
+	#Erhöhe Zählvariable
+	addiu $k0, $k0, 4
+
+	j printloop
+
+endloop:
+	#Den Offset wieder zurück setzen da jetzt alles geprintet
+	la $t0, puff
+	li $t1, 4
+	sw $t1, 0($t0)
+
+	#Deaktiviere Bildschirm-Interrupts
 	la $t0, 0xffff0008
 	andi $t0, 0xfffff7ff
 	sw $t0, 0xffff0008
