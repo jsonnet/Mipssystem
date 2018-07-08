@@ -161,6 +161,7 @@ beq $t0, 0, programm2
 
 	#Programmzähler im pcb überschreiben
 	mfc0 $t0, $14		#epc in t0 laden
+	addiu $t0, $t0, 4		#epc um eine Instruktion erhöhen
 	la $t1, pcb_task1
 	sw $t0, 0($t1)
 
