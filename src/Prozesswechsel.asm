@@ -46,6 +46,12 @@ mtc0 $t1, $14		#Die Adresse in epc register 12 schreiben
 #Count-Register auf 0 setzten ($9 = count)
 mtc0 $zero, $9
 
+######
+la $t0, pcb_task1
+addiu $t0, $t0, 4
+li $t1, 1
+sw $t1, 0($t0)
+
 eret
 
 ########## Ausnahmebehandlung ###########
@@ -151,8 +157,8 @@ timint:
 #Den aktuellen Prozess anhand des Idlebits im pcb herausfinden
 la $t1, pcb_task1
 addiu $t1, $t1, 4
-lw $t0, 0($t1)					#hier wird der epc komischerweise gesetzt und zu Zeile 56 gesprungen => Zeile löst selber ein Interrupt auf?
-bne $t0, 0, programm2
+lw $t0, 0($t1)
+beq $t0, 0, programm2
 	#Aktuell in task1 => soll zu task2 wechseln
 
 	#Programmzähler im pcb überschreiben
