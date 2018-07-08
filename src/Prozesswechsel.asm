@@ -147,8 +147,6 @@ exc_a0:	.word 0
 exc_t0: .word 0
 exc_t1: .word 0
 
-currentProgram: .byte 0			#Gibt das aktuell bearbeitete Programm wieder (0 = task1, 1 = task2)
-
 	.ktext
 # Hilfsfunktionen
 timint:

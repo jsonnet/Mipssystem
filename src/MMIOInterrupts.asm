@@ -19,7 +19,7 @@ exc_a0:	.word 0
 # TODO Zus�tzliche Pl�tze f�r Register die Sie in der Ausnahmebehandlung tempor�r sichern m�chten
 
 #16-Byte gro�en Puffer
-puff: .space 16
+puff: .byte 16
 
 ######## Bootup-Code ##########
 
@@ -36,10 +36,6 @@ la $t0, 0xffff0000		#Tastatur Kontrollport laden
 ori $t0, 0x00000002		#So verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
 sw $t0, 0xffff0000		#Veränderten Wert zurück schreiben
 
-#Aktiviere Bildschirm-Interrupts
-la $t0, 0xffff0008		#Bildschirm Kontrollport laden
-ori $t0, 0x00000002		#Verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
-sw $t0, 0xffff0008		#Veränderten Wert zurück schreiben
 
 #Setze epc auf usefultask
 la $t0, usefultask
@@ -83,12 +79,12 @@ okpc:
 interrupt:
 	#Auf Tastatur-Interrupt prüfen:
 	mfc0 $k0, $13						#Cause Register auslesen
-	andi $k0, 0x00000200		#so verunden, dass man das 10. Bit checken kann
-	beq $k0, 0x00000200, keyboardint
+	andi $k0, 0x00000400		#so verunden, dass man das 10. Bit checken kann
+	beq $k0, 0x00000400, keyboardint
 
 	mfc0 $k0, $13						#Cause Register auslesen
-	andi $k0, 0x00000400		#so verunden, dass man das 11. Bit checken kann
-	beq $k0, 0x00000400, displayint
+	andi $k0, 0x00000800		#so verunden, dass man das 11. Bit checken kann
+	beq $k0, 0x00000800, displayint
 
 	j ret
 ret:
@@ -101,7 +97,27 @@ ret:
 
 #TODO: Interrupts implementieren
 keyboardint:
+
+	lb $t0, 0xffff0004		#Eingabe abspeichern
+	la $t1, puff
+	sb $t0, 0($t1)
+
+	#Aktiviere Bildschirm-Interrupts
+	la $t0, 0xffff0008		#Bildschirm Kontrollport laden
+	ori $t0, 0x00000002		#Verodern, dass das vorletzte Bit 1 wird (Interrupt-Enable-Bit)
+	sw $t0, 0xffff0008		#Veränderten Wert zurück schreiben
+
 	j ret		#Keyboard return
 
 displayint:
+
+	la $t1, puff
+	lw $t0, 0($t1)
+	sb $t0, 0xffff000c
+
+	#TODO: Deaktiviere Bildschirm-Interrupts
+	la $t0, 0xffff0008
+	andi $t0, 0xfffff7ff
+	sw $t0, 0xffff0008
+
 	j ret		#Display return
