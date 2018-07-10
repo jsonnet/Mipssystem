@@ -59,7 +59,7 @@ eret
 # Andere Register m�ssen zun�chst gesichert werden
 .ktext 0x80000180
 	#Den aktuellen Counter speicher (als erstes)
-	mfc0 $s1, $9
+	#mfc0 $s1, $9
 
 	# Sichere alle Register, die wir in der Ausnahmebehandl�ung verwenden werden
 	move $k1, $at
@@ -109,7 +109,7 @@ nosyscall:
 	mtc0 $t0, $14
 
 	#Count auf Zustand vor dem Exception-Handling-Code setzten
-	mtc0 $s1, $9
+#	mtc0 $s1, $9
 
 	j ret
 
@@ -161,7 +161,7 @@ beq $t0, 0, programm2
 
 	#Programmzähler im pcb überschreiben
 	mfc0 $t0, $14		#epc in t0 laden
-	addiu $t0, $t0, 4		#epc um eine Instruktion erhöhen
+	addiu $t0, $t0, 0		#epc um eine Instruktion erhöhen
 	la $t1, pcb_task1
 	sw $t0, 0($t1)
 
@@ -282,6 +282,7 @@ endtimint:
 	#Für ungefähr 100 Zyklen hier unten lassen
 	#Setze Count-Register wieder zurück
 	mtc0 $zero, $9
+
 	j	ret
 
 # Prozesskontrollbl�cke
